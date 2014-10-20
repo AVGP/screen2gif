@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="gif.js"></script>
+    </head>
+    <body>
+        <video id="camera" width="150" height="150" autoplay style="display:none"></video>
+        <canvas id="output" width="150" height="150"></canvas>
+
+        <img id="image">
+
+        <button id="stop">Stop recording</button>
+        <script>
+navigator.getMedia = (  navigator.getUserMedia ||
+                      navigator.webkitGetUserMedia ||
+                      navigator.mozGetUserMedia ||
+                      navigator.msGetUserMedia);
+
+var WIDTH  = window.screen.availWidth  / 2,
+    HEIGHT = window.screen.availHeight / 2;
+
+var canvas = document.getElementById('output');
+
+canvas.width  = WIDTH;
+canvas.height = HEIGHT;
+
+var context = canvas.getContext('2d');
+
+var isRecording = false;
+
+var encoder = new GIF({
+  workers: 2,
+  quality: 10,
+  width: WIDTH,
+  height: HEIGHT
+});
+
+
+navigator.getMedia(
+  { audio: false, video: { mediaSource: 'window', mozMediaSource: 'window' }},
+  function(localMediaStream) {
+    camera.src = window.URL.createObjectURL(localMediaStream);
+    setTimeout(function() {
+      isRecording = true;
+      record();
+    }, 5000);
+  },
+  function(err) { console.log(err); alert("Boom"); }
+);
+
+function record() {
+    requestAnimationFrame(function captureFrame() {
+        context.drawImage(camera, 0, 0, WIDTH, HEIGHT);
+        encoder.addFrame(context, {copy: true});
+        if(isRecording) requestAnimationFrame(captureFrame);
+    });
+};
+
+        document.getElementById("stop").addEventListener("click", function() {
+            isRecording = false;
+            console.log("rendering...");
+            encoder.on('finished', function(blob) {
+                console.log("Its done!");
+                window.open(URL.createObjectURL(blob));
+            });
+            encoder.render();
+
+
+        })
+
+        </script>
+    </body>
+</html>
